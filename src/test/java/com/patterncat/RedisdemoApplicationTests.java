@@ -12,8 +12,10 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = RedisdemoApplication.class)
@@ -41,6 +43,41 @@ public class RedisdemoApplicationTests {
         String key = "test-incr3";
         redisTemplate.opsForValue().increment(key, 1);
         assertTrue((Integer) redisTemplate.opsForValue().get(key) == 2);
+    }
+
+    @Test
+    public void cas() throws InterruptedException, ExecutionException {
+        String key = "test-cas-1";
+        ValueOperations<String, String> strOps = redisTemplate.opsForValue();
+        strOps.set(key, "hello");
+        ExecutorService pool  = Executors.newCachedThreadPool();
+        List<Callable<Object>> tasks = new ArrayList<>();
+        for(int i=0;i<5;i++){
+            final int idx = i;
+            tasks.add(new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    return redisTemplate.execute(new SessionCallback() {
+                        @Override
+                        public Object execute(RedisOperations operations) throws DataAccessException {
+                            operations.watch(key);
+                            String origin = (String) operations.opsForValue().get(key);
+                            operations.multi();
+                            operations.opsForValue().set(key, origin + idx);
+                            Object rs = operations.exec();
+                            System.out.println("set:"+origin+idx+" rs:"+rs);
+                            return rs;
+                        }
+                    });
+                }
+            });
+        }
+        List<Future<Object>> futures = pool.invokeAll(tasks);
+        for(Future<Object> f:futures){
+            System.out.println(f.get());
+        }
+        pool.shutdown();
+        pool.awaitTermination(1000, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -104,6 +141,7 @@ public class RedisdemoApplicationTests {
                 operations.multi();
                 operations.opsForSet().add("k1", "value1");
                 operations.opsForSet().add("k2", "value2");
+                operations.discard();
                 // This will contain the results of all ops in the transaction
                 return operations.exec();
             }

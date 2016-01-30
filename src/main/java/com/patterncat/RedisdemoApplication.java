@@ -14,8 +14,10 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 
 @SpringBootApplication
 @EnableCaching
@@ -44,7 +46,7 @@ public class RedisdemoApplication {
 
 	@Bean
 	public RedisTemplate redisTemplate(
-			RedisConnectionFactory factory) {
+			RedisConnectionFactory factory,KeyGenerator keyGenerator) {
 		RedisTemplate template = new RedisTemplate();
 		template.setConnectionFactory(factory);
 		Jackson2JsonRedisSerializer jackson2JsonRedisSerializer = new Jackson2JsonRedisSerializer(Object.class);
@@ -54,6 +56,7 @@ public class RedisdemoApplication {
 		jackson2JsonRedisSerializer.setObjectMapper(om);
 		template.setValueSerializer(jackson2JsonRedisSerializer);
 		template.afterPropertiesSet();
+		template.setKeySerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
 		return template;
 	}
 
