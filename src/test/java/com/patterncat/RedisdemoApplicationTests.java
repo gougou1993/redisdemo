@@ -46,7 +46,7 @@ public class RedisdemoApplicationTests {
     }
 
     @Test
-    public void cas() throws InterruptedException, ExecutionException {
+      public void cas() throws InterruptedException, ExecutionException {
         String key = "test-cas-1";
         ValueOperations<String, String> strOps = redisTemplate.opsForValue();
         strOps.set(key, "hello");
@@ -69,6 +69,36 @@ public class RedisdemoApplicationTests {
                             return rs;
                         }
                     });
+                }
+            });
+        }
+        List<Future<Object>> futures = pool.invokeAll(tasks);
+        for(Future<Object> f:futures){
+            System.out.println(f.get());
+        }
+        pool.shutdown();
+        pool.awaitTermination(1000, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    public void wrong_cas_should_execute_in_session_callback() throws InterruptedException, ExecutionException {
+        String key = "test-cas-wrong";
+        ValueOperations<String, String> strOps = redisTemplate.opsForValue();
+        strOps.set(key, "hello");
+        ExecutorService pool  = Executors.newCachedThreadPool();
+        List<Callable<Object>> tasks = new ArrayList<>();
+        for(int i=0;i<5;i++){
+            final int idx = i;
+            tasks.add(new Callable() {
+                @Override
+                public Object call() throws Exception {
+                    redisTemplate.watch(key);
+                    String origin = (String) redisTemplate.opsForValue().get(key);
+                    redisTemplate.multi();
+                    redisTemplate.opsForValue().set(key, origin + idx);
+                    Object rs = redisTemplate.exec();
+                    System.out.println("set:"+origin+idx+" rs:"+rs);
+                    return rs;
                 }
             });
         }
