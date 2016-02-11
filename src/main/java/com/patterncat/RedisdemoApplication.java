@@ -57,6 +57,8 @@ public class RedisdemoApplication {
 		template.setValueSerializer(jackson2JsonRedisSerializer);
 		template.afterPropertiesSet();
 		template.setKeySerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
+		template.setHashKeySerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
+		template.setHashValueSerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
 		return template;
 	}
 
