@@ -26,12 +26,15 @@ public class VoteServiceTest extends RedisdemoApplicationTests{
     public void incrMap(){
         //template.setHashValueSerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
         //这里得用string写进去
-        redisTemplate.<String,Object>opsForHash().put("user-abcde", "count", "1");
-        redisTemplate.opsForHash().increment("user-abcde", "count", 5);
-
+//        redisTemplate.<String,Object>opsForHash().put("user-abcdef", "count", "1");
         //error java.lang.ClassCastException: java.lang.Long cannot be cast to java.lang.String
-        redisTemplate.<String,Object>opsForHash().put("user-abcde", "now", System.currentTimeMillis());
-        System.out.println(redisTemplate.opsForHash().get("user-abcde", "now"));
+//        redisTemplate.<String,Object>opsForHash().put("user-abcde", "now", System.currentTimeMillis());
+//        System.out.println(redisTemplate.opsForHash().get("user-abcde", "now"));
+
+
+        //template.setHashValueSerializer(new GenericToStringSerializer<Object>(Object.class));
+        redisTemplate.opsForHash().increment("user-abcdef", "count", 5);
+
     }
 
     @Test

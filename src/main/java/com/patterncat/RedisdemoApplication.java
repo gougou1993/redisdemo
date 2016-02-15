@@ -13,6 +13,7 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.GenericToStringSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -55,10 +56,15 @@ public class RedisdemoApplication {
 		om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
 		jackson2JsonRedisSerializer.setObjectMapper(om);
 		template.setValueSerializer(jackson2JsonRedisSerializer);
+//		template.setValueSerializer( new GenericToStringSerializer<Object>( Object.class));
 		template.afterPropertiesSet();
 		template.setKeySerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
-		template.setHashKeySerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
-		template.setHashValueSerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
+//		template.setHashKeySerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
+//		template.setHashValueSerializer(new StringRedisSerializer(StandardCharsets.UTF_8));
+
+		template.setHashKeySerializer(new GenericToStringSerializer<Object>(Object.class));
+		template.setHashValueSerializer(new GenericToStringSerializer<Object>(Object.class));
+
 		return template;
 	}
 
