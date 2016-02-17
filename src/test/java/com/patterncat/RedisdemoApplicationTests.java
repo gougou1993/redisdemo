@@ -9,6 +9,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.redis.connection.RedisConnection;
+import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -29,6 +31,20 @@ public class RedisdemoApplicationTests {
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Test
+    public void pipeline(){
+        List<Object> results = template.executePipelined(new RedisCallback<Object>() {
+                    public Object doInRedis(RedisConnection connection) throws DataAccessException {
+                        StringRedisConnection stringRedisConn = (StringRedisConnection)connection;
+                        for(int i=0; i< 10; i++) {
+                            stringRedisConn.lPush("myqueue","item"+i);
+                        }
+                        return null;
+                    }
+                });
+        results.stream().forEach(System.out::println);
+    }
 
     @Test
     public void set() {
