@@ -14,9 +14,9 @@ import org.springframework.data.redis.connection.StringRedisConnection;
 import org.springframework.data.redis.core.*;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -31,6 +31,71 @@ public class RedisdemoApplicationTests {
 
     @Autowired
     private RedisTemplate redisTemplate;
+
+    @Test
+    public void scanDbKeys(){
+        template.execute(new RedisCallback<Iterable<byte[]>>() {
+            @Override
+            public Iterable<byte[]> doInRedis(RedisConnection connection) throws DataAccessException {
+
+                List<byte[]> binaryKeys = new ArrayList<byte[]>();
+
+                Cursor<byte[]> cursor = connection.scan(ScanOptions.scanOptions().count(5).build());
+                while (cursor.hasNext()) {
+                    byte[] key = cursor.next();
+                    binaryKeys.add(key);
+                    System.out.println(new String(key, StandardCharsets.UTF_8));
+                }
+
+                try {
+                    cursor.close();
+                } catch (IOException e) {
+                    // do something meaningful
+                }
+
+                return binaryKeys;
+            }
+        });
+    }
+
+    /**
+     * sadd myset a b c d e f g h i j k l m n
+     */
+    @Test
+    public void scanSet(){
+        Cursor<String> cursor = template.opsForSet().scan("myset",ScanOptions.NONE);
+        while (cursor.hasNext()){
+            System.out.println(cursor.next());
+        }
+    }
+
+    /**
+     * zadd sortset 89 tom 90 jim 100 david
+     */
+    @Test
+    public void scanZSet(){
+        Cursor<ZSetOperations.TypedTuple<String>> cursor = template.opsForZSet().scan("sortset",ScanOptions.NONE);
+        while (cursor.hasNext()){
+            ZSetOperations.TypedTuple<String> item = cursor.next();
+            System.out.println(item.getValue() + ":" + item.getScore());
+        }
+    }
+
+    /**
+     *  hset mymap name "patterncat"
+     *  hset mymap email "pt@g.cn"
+     *  hset mymap age 20
+     *  hset mymap desc "hello"
+     *  hset mymap sex "male"
+     */
+    @Test
+    public void scanHash(){
+        Cursor<Map.Entry<Object, Object>> curosr = template.opsForHash().scan("mymap", ScanOptions.NONE);
+        while(curosr.hasNext()){
+            Map.Entry<Object, Object> entry = curosr.next();
+            System.out.println(entry.getKey()+":"+entry.getValue());
+        }
+    }
 
     @Test
     public void pipeline(){
